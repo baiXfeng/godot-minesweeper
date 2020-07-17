@@ -4,14 +4,16 @@ var bomb = false
 var number = 0
 var pos = Vector2(0, 0)
 var _state = State.NONE
+var _showFlagMask = false
 
 enum State {
 	NONE,
 	CLOSED = 0x1,
-	FLAG = 0x2,
-	FLAGMASK = 0x4,
-	FLAGMASKHIDDEN = 0x8,
-	QUESTION = 0x10,
+	CLOSEDNONE = 0x2,
+	FLAG = 0x4,
+	FLAGMASK = 0x8,
+	FLAGMASKHIDDEN = 0x10,
+	QUESTION = 0x20,
 	OPENED = 0x100,
 	RED = 0x200,
 	BOMB = 0x400,
@@ -60,16 +62,49 @@ func setDefault():
 	setOpenedGroupShow(false)
 	pass
 	
-func setOpened():
-	if _state & State.FLAG || _state & State.QUESTION || _state & State.OPENED:
-		return
+func swap(tile):
+	var temp = {
+		"bomb": bomb,
+		"number": number,
+		"pos": pos,
+		"state": _state
+	}
+	bomb = tile.bomb
+	number = tile.number
+	pos = tile.pos
+	_state = tile._state
+	tile.bomb = temp.bomb
+	tile.number = temp.number
+	tile.pos = temp.pos
+	tile._state = temp.state
+	pass
+	
+func setForceOpened():
 	if bomb:
 		setState(State.OPENED|State.BOMB)
+		get_tree().call_group('main', 'onGameOver')
 		return
 	if number != 0:
 		setState(State.OPENED|State.NUMBER)
 		return
 	setState(State.OPENED)
+	pass
+	
+func setOpened():
+	if _state & State.OPENED:
+		return
+	if _state & State.FLAGMASK:
+		setState(State.FLAG)
+		return
+	if _state & State.FLAG:
+		if _showFlagMask:
+			setState(State.QUESTION)
+		return
+	if _state & State.QUESTION:
+		if _showFlagMask:
+			setState(State.FLAGMASK)
+		return
+	setForceOpened()
 	pass
 	
 func setBomb():
@@ -92,33 +127,47 @@ func setPos(vec):
 func getPos():
 	return pos
 	
-func isOnlyClosed():
-	return _state & State.CLOSED != 0 && _state & State.OPENED == 0 && _state & State.FLAG == 0 && _state & State.QUESTION == 0
+func showFlagMask(show):
+	_showFlagMask = show
+	if show:
+		if _state & State.FLAG != 0 || _state & State.QUESTION:
+			return
+		setState(State.FLAGMASK)
+	else:
+		if _state & State.FLAGMASK == 0:
+			return
+		setState(State.FLAGMASKHIDDEN)
+	pass
 	
 func setState(state):
 	if state & State.FLAG != 0:
 		setClosedGroupShow(false)
+		get_node("closed").set_visible(true)
 		get_node("closed/flag").set_visible(true)
-		_state |= State.FLAG
+		_state = State.CLOSED | State.FLAG
 		pass
 	if state & State.FLAGMASK != 0:
-		if isOnlyClosed():
-			setClosedGroupShow(false)
-			get_node("closed").set_visible(true)
-			get_node("closed/flag-mask").set_visible(true)
-			_state |= State.FLAGMASK
+		setClosedGroupShow(false)
+		get_node("closed").set_visible(true)
+		get_node("closed/flag-mask").set_visible(true)
+		_state = State.CLOSED | State.FLAGMASK
 		pass
 	if state & State.FLAGMASKHIDDEN != 0:
-		if isOnlyClosed():
-			setClosedGroupShow(false)
-			get_node("closed").set_visible(true)
-			get_node("closed/flag-mask").set_visible(false)
-			_state &= ~State.FLAGMASK
+		setClosedGroupShow(false)
+		get_node("closed").set_visible(true)
+		get_node("closed/flag-mask").set_visible(false)
+		_state = State.CLOSED
 		pass
 	if state & State.QUESTION != 0:
 		setClosedGroupShow(false)
+		get_node("closed").set_visible(true)
 		get_node("closed/question").set_visible(true)
-		_state |= State.QUESTION
+		_state = State.CLOSED | State.QUESTION
+		pass
+	if state & State.CLOSEDNONE != 0:
+		setClosedGroupShow(false)
+		get_node("closed").set_visible(true)
+		_state = State.CLOSED
 		pass
 	if state & State.CLOSED != 0:
 		setOpenedGroupShow(false)

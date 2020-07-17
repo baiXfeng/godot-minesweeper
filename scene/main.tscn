@@ -21,6 +21,9 @@ __meta__ = {
 margin_right = 1080.0
 margin_bottom = 1650.0
 color = Color( 1, 1, 1, 0.196078 )
+__meta__ = {
+"_edit_use_anchors_": false
+}
 
 [node name="Node" parent="." instance=ExtResource( 2 )]
 

@@ -9,6 +9,7 @@ var _game = null
 
 # Called when the node enters the scene tree for the first time.
 func _ready():
+	randomize()
 	add_to_group('main')
 	pass # Replace with function body.
 
@@ -16,17 +17,21 @@ func _ready():
 #func _process(delta):
 #	pass
 
-func _on_Button_pressed():
-	mode = 1 - mode
-	if _game != null:
-		_game.showFlagMask(mode==1)
-		pass
+func setMode(v):
+	mode = v
+	_game.showFlagMask(mode==1)
 	if mode == 0 :
 		get_node("Button").text = 'Clear Mode'
 		return
 	else:
 		get_node("Button").text = 'Flag Mode'
 		return
+	pass
+
+func _on_Button_pressed():
+	if _game == null:
+		return
+	setMode(1-mode)
 	pass # Replace with function body.
 
 func onGameStart(w, h, mine):
@@ -50,6 +55,14 @@ func onGameStart(w, h, mine):
 	var label = get_node("error-label")
 	label.set_visible(false)
 	
+	setMode(0)
+	
+	pass
+	
+func onGameOver():
+	var _class = preload("res://chunk/game_over.tscn")
+	add_child(_class.instance())
+	_game.gameover = true
 	pass
 	
 func onError(msg):
