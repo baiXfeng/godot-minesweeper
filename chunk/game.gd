@@ -190,9 +190,6 @@ func onMouseUp(event):
 				return
 			tile.setOpened()
 			first = false
-		print('条件 - ', closedTileCount, ' - ', maxMineCount)
-		if closedTileCount - maxMineCount == 0:
-			get_tree().call_group('main', 'onGameWin')
 	pass
 	
 func subClosedTile(pos):
@@ -201,6 +198,8 @@ func subClosedTile(pos):
 		closedTileCount -= 1
 		pass
 	print('还有砖块: ', closedTileCount)
+	if closedTileCount - maxMineCount == 0:
+		get_tree().call_group('main', 'onGameWin')
 	pass
 
 

@@ -20,3 +20,7 @@ func _on_Button_pressed():
 	get_parent().remove_child(self)
 	self.queue_free()
 	pass # Replace with function body.
+
+func setTips(text):
+	get_node("Label").text = text
+	pass

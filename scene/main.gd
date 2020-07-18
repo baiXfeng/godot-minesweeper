@@ -63,14 +63,20 @@ func onGameStart(w, h, mine):
 	pass
 	
 func onGameOver():
+	if _game.gameover:
+		return
 	var _class = preload("res://chunk/game_over.tscn")
 	add_child(_class.instance())
 	_game.gameover = true
 	pass
 	
 func onGameWin():
+	if _game.gameover:
+		return
 	var _class = preload("res://chunk/game_over.tscn")
-	add_child(_class.instance())
+	var view = _class.instance()
+	view.setTips('You Win!')
+	add_child(view)
 	_game.gameover = true
 	pass
 	
