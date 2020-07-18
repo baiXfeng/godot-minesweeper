@@ -10,9 +10,11 @@ var mapWidth = 0
 var mapHeight = 0
 var mineCount = 0
 var maxMineCount = 0
+var closedTileCount = 0
 var tileMap = null
 var first = true
 var gameover = false
+var mapTag = []
 
 # Called when the node enters the scene tree for the first time.
 func _ready():
@@ -30,6 +32,7 @@ func start(w, h, mine):
 	var _mineCount = 0
 	for j in range(h):
 		_map.append([])
+		mapTag.append([])
 		for i in range(w):
 			var _class = preload("res://chunk/tile.tscn")
 			var tile = _class.instance()
@@ -41,12 +44,14 @@ func start(w, h, mine):
 				_mineCount += 1
 				tile.setBomb()
 			_map[j].append(tile)
+			mapTag[j].append(true)
 			pass
 	set_size(Vector2(108*w, 108*h))
 	mapWidth = w
 	mapHeight = h
 	mineCount = mine
 	maxMineCount = mine
+	closedTileCount = int(w * h)
 	tileMap = _map
 	shuffle()
 	pass
@@ -115,7 +120,7 @@ func getTile(x, y):
 		return null
 	if y < 0 || y >= mapHeight:
 		return null
-	return tileMap[y][x]
+	return tileMap[int(y)][int(x)]
 	
 func computeMove(pos, size0, size1):
 	# size0 - self
@@ -185,7 +190,17 @@ func onMouseUp(event):
 				return
 			tile.setOpened()
 			first = false
-		return
+		print('条件 - ', closedTileCount, ' - ', maxMineCount)
+		if closedTileCount - maxMineCount == 0:
+			get_tree().call_group('main', 'onGameWin')
+	pass
+	
+func subClosedTile(pos):
+	if mapTag[int(pos.y)][int(pos.x)] == true:
+		mapTag[int(pos.y)][int(pos.x)] = false
+		closedTileCount -= 1
+		pass
+	print('还有砖块: ', closedTileCount)
 	pass
 
 

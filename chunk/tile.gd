@@ -39,6 +39,9 @@ func getType():
 		return Type.NUMBER
 	return Type.NONE
 	
+func isNumberAndOpened():
+	return getType() == Type.NUMBER && isState(State.OPENED)
+	
 func setClosedGroupShow(show):
 	var _node = get_node("closed")
 	var childs = _node.get_children()
@@ -66,17 +69,25 @@ func swap(tile):
 	var temp = {
 		"bomb": bomb,
 		"number": number,
-		"pos": pos,
 		"state": _state
 	}
 	bomb = tile.bomb
 	number = tile.number
-	pos = tile.pos
 	_state = tile._state
 	tile.bomb = temp.bomb
 	tile.number = temp.number
-	tile.pos = temp.pos
 	tile._state = temp.state
+	pass
+	
+func setNumberOpened():
+	if bomb:
+		setState(State.OPENED|State.BOMB)
+		get_tree().call_group('main', 'onGameOver')
+		return
+	if number != 0:
+		setState(State.OPENED|State.NUMBER)
+		return
+	setState(State.OPENED)
 	pass
 	
 func setForceOpened():
@@ -88,10 +99,14 @@ func setForceOpened():
 		setState(State.OPENED|State.NUMBER)
 		return
 	setState(State.OPENED)
+	get_tree().call_group('main', 'onTileOpen', pos)
 	pass
 	
 func setOpened():
 	if _state & State.OPENED:
+		if number != 0:
+			get_tree().call_group('main', 'onNumberClick', pos)
+			return
 		return
 	if _state & State.FLAGMASK:
 		setState(State.FLAG)
@@ -128,6 +143,9 @@ func getPos():
 	return pos
 	
 func showFlagMask(show):
+	if _state & State.OPENED:
+		_showFlagMask = false
+		return
 	_showFlagMask = show
 	if show:
 		if _state & State.FLAG != 0 || _state & State.QUESTION:
@@ -138,6 +156,9 @@ func showFlagMask(show):
 			return
 		setState(State.FLAGMASKHIDDEN)
 	pass
+	
+func isState(flag):
+	return flag & _state
 	
 func setState(state):
 	if state & State.FLAG != 0:
@@ -177,6 +198,7 @@ func setState(state):
 	if state & State.OPENED != 0:
 		setClosedGroupShow(false)
 		get_node("opened").set_visible(true)
+		get_tree().call_group('main', 'onTileClosed2Opened', pos)
 		_state |= State.OPENED
 		pass
 	if state & State.RED != 0 || state & State.BOMB != 0:

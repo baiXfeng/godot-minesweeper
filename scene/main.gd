@@ -27,6 +27,9 @@ func setMode(v):
 		get_node("Button").text = 'Flag Mode'
 		return
 	pass
+	
+func isFlagMode():
+	return mode == 1
 
 func _on_Button_pressed():
 	if _game == null:
@@ -63,6 +66,97 @@ func onGameOver():
 	var _class = preload("res://chunk/game_over.tscn")
 	add_child(_class.instance())
 	_game.gameover = true
+	pass
+	
+func onGameWin():
+	var _class = preload("res://chunk/game_over.tscn")
+	add_child(_class.instance())
+	_game.gameover = true
+	pass
+	
+func _makeKey(x, y):
+	return String(int(x))+'-'+String(int(y))
+	
+var offset = [
+	{"x": -1, "y": -1}, {"x": 0, "y": -1}, {"x": 1, "y": -1},
+	{"x": -1, "y": 0},                     {"x": 1, "y": 0},
+	{"x": -1, "y": 1}, {"x": 0, "y": 1}, {"x": 1, "y": 1},
+]
+	
+func onNumberClick(pos):
+	print('number', pos)
+	var tile = _game.getTile(pos.x, pos.y)
+	if tile != null:
+		if tile.isNumberAndOpened() && isFlagMode():
+			# 插旗模式 + 点击数字，进行自动扫雷
+			var number = tile.getNumber()
+			var count = 0
+			var list = []
+			for o in offset:
+				var x = pos.x + o.x
+				var y = pos.y + o.y
+				var next = _game.getTile(x, y)
+				if next == null:
+					continue
+				if next.isState(next.State.CLOSED):
+					list.append(next)
+					if next.isState(next.State.FLAG):
+						count += 1
+				pass
+			if count == number:
+				for n in list:
+					if !n.isState(n.State.FLAG):
+						n.setNumberOpened()
+				pass
+			return
+		pass
+	pass
+	
+func onTileOpen(pos):
+	
+	var flag1 = {}
+	var flag2 = {}
+	var list1 = [] #检查列表
+	var list2 = [] #目标列表
+	
+	list1.append(pos)
+	
+	while !list1.empty():
+		
+		list2.push_back( list1.back() )
+		list1.pop_back()
+		
+		var curr = list2.back()
+		
+		flag1[_makeKey(curr.x, curr.y)] = false
+		flag2[_makeKey(curr.x, curr.y)] = true
+		
+		var currTile = _game.getTile(curr.x, curr.y)
+		if currTile.getType() == currTile.Type.NONE:
+			# 不是雷就把周围一圈加入list1
+			for o in offset:
+				var x = curr.x + o.x
+				var y = curr.y + o.y
+				var nextTile = _game.getTile(x, y)
+				if nextTile != null && nextTile.isState(nextTile.State.CLOSED) && !flag1.get(_makeKey(x, y), false) && !flag2.get(_makeKey(x, y), false):
+					# 坐标块有效并且没有被记录，加入待检查列表
+					list1.push_back(Vector2(x, y))
+					flag1[_makeKey(x, y)] = true
+					pass
+				pass
+		pass
+		
+	# 得到块列表，把符合条件的块统统打开
+	for v in list2:
+		var tile = _game.getTile(v.x, v.y)
+		if tile.getType() != tile.Type.BOMB:
+			tile.setOpened()
+			pass
+	
+	pass
+	
+func onTileClosed2Opened(pos):
+	_game.subClosedTile(pos)
 	pass
 	
 func onError(msg):
