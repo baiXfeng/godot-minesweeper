@@ -121,6 +121,7 @@ texture_pressed = ExtResource( 3 )
 __meta__ = {
 "_edit_use_anchors_": false
 }
+
 [connection signal="value_changed" from="Control/SpinBox" to="." method="_on_Width_value_changed"]
 [connection signal="value_changed" from="Control2/SpinBox" to="." method="_on_Height_value_changed"]
 [connection signal="value_changed" from="Control3/SpinBox" to="." method="_on_Mine_value_changed"]

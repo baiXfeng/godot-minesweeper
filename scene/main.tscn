@@ -4,9 +4,7 @@
 [ext_resource path="res://chunk/header.tscn" type="PackedScene" id=2]
 [ext_resource path="res://scene/LinkButton.gd" type="Script" id=3]
 
-[node name="Node" type="Node" groups=[
-"main",
-]]
+[node name="Node" type="Node" groups=["main"]]
 script = ExtResource( 1 )
 
 [node name="GameBox" type="Control" parent="."]
@@ -63,5 +61,6 @@ script = ExtResource( 3 )
 __meta__ = {
 "_edit_use_anchors_": false
 }
+
 [connection signal="pressed" from="Button" to="." method="_on_Button_pressed"]
 [connection signal="pressed" from="LinkButton" to="LinkButton" method="_on_pressed"]
