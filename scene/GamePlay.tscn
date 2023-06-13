@@ -287,57 +287,66 @@ stretch_mode = 2
 
 [node name="HBoxContainer" type="HBoxContainer" parent="CanvasLayer/ColorRect"]
 anchor_bottom = 1.0
-custom_constants/separation = 10
 
-[node name="Label" type="Label" parent="CanvasLayer/ColorRect/HBoxContainer"]
+[node name="mine_text" type="Label" parent="CanvasLayer/ColorRect/HBoxContainer"]
 margin_top = 24.0
-margin_right = 180.0
+margin_right = 95.0
 margin_bottom = 40.0
-rect_min_size = Vector2( 180, 0 )
+rect_min_size = Vector2( 95, 0 )
 custom_fonts/font = ExtResource( 18 )
-text = "BEST TIME:"
+text = "MINE:"
 align = 2
-valign = 1
 
-[node name="Label2" type="Label" parent="CanvasLayer/ColorRect/HBoxContainer"]
-margin_left = 190.0
+[node name="mine_size" type="Label" parent="CanvasLayer/ColorRect/HBoxContainer"]
+margin_left = 99.0
 margin_top = 24.0
-margin_right = 270.0
+margin_right = 131.0
 margin_bottom = 40.0
 custom_fonts/font = ExtResource( 18 )
-text = "59:59"
-valign = 1
+text = "00"
+align = 2
 
 [node name="HBoxContainer2" type="HBoxContainer" parent="CanvasLayer/ColorRect"]
 anchor_left = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
-margin_left = -270.0
+margin_left = -400.0
 custom_constants/separation = 10
 alignment = 2
 
-[node name="Label" type="Label" parent="CanvasLayer/ColorRect/HBoxContainer2"]
-margin_left = 80.0
+[node name="best_text" type="Label" parent="CanvasLayer/ColorRect/HBoxContainer2"]
+margin_left = 110.0
 margin_top = 24.0
-margin_right = 160.0
+margin_right = 190.0
 margin_bottom = 40.0
 custom_fonts/font = ExtResource( 18 )
-text = "TIME:"
+text = "BEST:"
 align = 2
 valign = 1
 
-[node name="Label2" type="Label" parent="CanvasLayer/ColorRect/HBoxContainer2"]
-margin_left = 170.0
+[node name="best_score" type="Label" parent="CanvasLayer/ColorRect/HBoxContainer2"]
+margin_left = 200.0
 margin_top = 24.0
-margin_right = 250.0
+margin_right = 280.0
 margin_bottom = 40.0
 custom_fonts/font = ExtResource( 18 )
+text = "59:59"
+valign = 1
+
+[node name="play_time" type="Label" parent="CanvasLayer/ColorRect/HBoxContainer2"]
+margin_left = 290.0
+margin_top = 24.0
+margin_right = 380.0
+margin_bottom = 40.0
+rect_min_size = Vector2( 90, 0 )
+custom_fonts/font = ExtResource( 18 )
 text = "00:00"
+align = 2
 valign = 1
 
 [node name="Control" type="Control" parent="CanvasLayer/ColorRect/HBoxContainer2"]
-margin_left = 260.0
-margin_right = 270.0
+margin_left = 390.0
+margin_right = 400.0
 margin_bottom = 64.0
 rect_min_size = Vector2( 10, 0 )
 

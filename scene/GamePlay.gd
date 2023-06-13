@@ -7,7 +7,8 @@ onready var flag_layer = $FlagLayer
 onready var mistake_layer = $MistakeLayer
 onready var camera2d = $Camera2D
 onready var result_layer = $CanvasLayer/CenterContainer
-onready var play_time_label = $CanvasLayer/ColorRect/HBoxContainer2/Label2
+onready var play_time_label = $CanvasLayer/ColorRect/HBoxContainer2/play_time
+onready var mine_size_label = $CanvasLayer/ColorRect/HBoxContainer/mine_size
 
 var map_size:Vector2
 var mine_size:int
@@ -93,6 +94,8 @@ func build_map(mapSize:Vector2, mineSize:int):
 	for point in mine_list:
 		_proc_mine_number(point)
 	
+	_update_mine_size()
+	
 	var view_size = map_size * 32
 	var camera_position = view_size * 0.5
 	camera_position.y = view_size.y * 0.4
@@ -142,6 +145,8 @@ func _first_open_tile(point:Vector2):
 		item_layer.set_cellv(m_point, MINE_ID)
 	for point in mine_list:
 		_proc_mine_number(point)
+	
+	_update_mine_size()
 
 func _auto_open_tile(point:Vector2):
 	var current_mine_size = item_layer.get_cellv(point) + 1
@@ -291,7 +296,7 @@ func _set_tips(win:bool):
 	})
 	
 	var t = _second_to_vector(best_score)
-	$CanvasLayer/ColorRect/HBoxContainer/Label2.text = "{m}:{s}".format({
+	$CanvasLayer/ColorRect/HBoxContainer2/best_score.text = "{m}:{s}".format({
 		"m": "%02d" % int(t.x),
 		"s": "%02d" % int(t.y),
 	})
@@ -308,10 +313,6 @@ func _check_point_invalid(point:Vector2):
 		print("无效坐标")
 	return invalid
 
-func _physics_process(delta):
-	if Input.is_action_pressed("ui_accept"):
-		_testBuild()
-
 func _process(delta):
 	play_second += delta
 	_update_play_time()
@@ -321,6 +322,18 @@ func _update_play_time():
 	play_time_label.text = "{m}:{s}".format({
 		"m": "%02d" % int(t.x),
 		"s": "%02d" % int(t.y),
+	})
+
+func _update_mine_size():
+	var count = 0
+	for point in mine_list:
+		if _is_flag_tile(flag_layer.get_cellv(point)):
+			count += 1
+	var value = mine_list.size() - count
+	if value <= 0:
+		value = 0
+	mine_size_label.text = "{size}".format({
+		"size": "%02d" % value
 	})
 
 func _second_to_vector(second:float) -> Vector2:
@@ -342,6 +355,7 @@ func _input(event):
 					flag_layer.set_cellv(point, -1)
 				else:
 					flag_layer.set_cellv(point, 0)
+				_update_mine_size()
 			return
 		if mouse.button_index == BUTTON_LEFT:
 			var point = (mouse_position / 32).floor()
