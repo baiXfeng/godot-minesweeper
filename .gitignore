@@ -1,4 +1,4 @@
 bin
 android
-.import
+*.import
 *.apk
