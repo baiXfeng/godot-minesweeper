@@ -6,6 +6,8 @@ onready var top_layer = $TopLayer
 onready var flag_layer = $FlagLayer
 onready var mistake_layer = $MistakeLayer
 onready var camera2d = $Camera2D
+onready var result_layer = $CanvasLayer/CenterContainer
+onready var play_time_label = $CanvasLayer/ColorRect/HBoxContainer2/Label2
 
 var map_size:Vector2
 var mine_size:int
@@ -14,6 +16,11 @@ var select_point = Vector2(-1, -1)
 var mine_list = []
 var first_open = true
 var mouse_pressed = false
+var play_second = 0.0
+
+var win_tips = "CONGRATULATIONS!\nYOU WIN!"
+var lose_tips = "GAME OVER!\nYOU SELECTED MINE!"
+var best_score = 65535
 
 const MINE_ID = 8
 
@@ -44,11 +51,13 @@ func _testBuild():
 func build_map(mapSize:Vector2, mineSize:int):
 	
 	set_process_input(true)
+	set_process(true)
 	
 	first_open = true
 	map_size = mapSize
 	mine_size = mineSize
 	map_border = Rect2(Vector2.ZERO, mapSize)
+	play_second = 0.0
 	
 	ground_layer.clear()
 	item_layer.clear()
@@ -56,6 +65,7 @@ func build_map(mapSize:Vector2, mineSize:int):
 	flag_layer.clear()
 	mistake_layer.clear()
 	mine_list.clear()
+	result_layer.visible = false
 	
 	var points = []
 	
@@ -84,7 +94,9 @@ func build_map(mapSize:Vector2, mineSize:int):
 		_proc_mine_number(point)
 	
 	var view_size = map_size * 32
-	camera2d.position = view_size * 0.5
+	var camera_position = view_size * 0.5
+	camera_position.y = view_size.y * 0.4
+	camera2d.position = camera_position
 
 func _proc_mine_number(point:Vector2):
 	for p in offsets_8:
@@ -240,10 +252,55 @@ func _check_win():
 func _proc_win():
 	print("win.")
 	set_process_input(false)
+	set_process(false)
+	_set_tips(true)
 
 func _proc_game_over():
 	print("game over.")
 	set_process_input(false)
+	set_process(false)
+	_set_tips(false)
+
+func _set_tips(win:bool):
+	
+	yield(get_tree().create_timer(0.5), "timeout")
+	
+	result_layer.visible = true
+	
+	var new_record = false
+	if win and play_second < best_score:
+		best_score = play_second
+		new_record = true
+	
+	var win_tips_copy = win_tips
+	if new_record:
+		win_tips_copy = win_tips + "\nNEW RECORD!"
+	
+	if win:
+		$CanvasLayer/CenterContainer/background/VBoxContainer/title.text = win_tips_copy
+	else:
+		$CanvasLayer/CenterContainer/background/VBoxContainer/title.text = lose_tips
+	
+	$CanvasLayer/CenterContainer/background/VBoxContainer/mapsize.text = "MAP SIZE: {x}x{y}".format({
+		"x": int(map_size.x),
+		"y": int(map_size.y),
+	})
+	
+	$CanvasLayer/CenterContainer/background/VBoxContainer/mineratio.text = "MINE RATIO: {value}%".format({
+		"value": "%0.2f" % (mine_list.size() / (map_size.x * map_size.y) * 100)
+	})
+	
+	var t = _second_to_vector(best_score)
+	$CanvasLayer/ColorRect/HBoxContainer/Label2.text = "{m}:{s}".format({
+		"m": "%02d" % int(t.x),
+		"s": "%02d" % int(t.y),
+	})
+	
+	t = _second_to_vector(play_second)
+	$CanvasLayer/CenterContainer/background/VBoxContainer/timespent.text = "TIME SPENT: {m}:{s}".format({
+		"m": "%02d" % int(t.x),
+		"s": "%02d" % int(t.y),
+	})
 
 func _check_point_invalid(point:Vector2):
 	var invalid = !map_border.has_point(point)
@@ -251,9 +308,28 @@ func _check_point_invalid(point:Vector2):
 		print("无效坐标")
 	return invalid
 
-func _process(delta):
+func _physics_process(delta):
 	if Input.is_action_pressed("ui_accept"):
 		_testBuild()
+
+func _process(delta):
+	play_second += delta
+	_update_play_time()
+
+func _update_play_time():
+	var t = _second_to_vector(play_second)
+	play_time_label.text = "{m}:{s}".format({
+		"m": "%02d" % int(t.x),
+		"s": "%02d" % int(t.y),
+	})
+
+func _second_to_vector(second:float) -> Vector2:
+	var value = int(second)
+	var ret = Vector2(floor(value/60), value%60)
+	if ret.x > 59:
+		ret.x = 59
+		ret.y = 59
+	return ret
 
 func _input(event):
 	var mouse = event as InputEventMouseButton
@@ -304,10 +380,16 @@ func _input(event):
 	
 	var mouse_motion = event as InputEventMouseMotion
 	if mouse_motion and mouse_pressed:
-		camera2d.position -= mouse_motion.relative * camera2d.zoom
-		
+		if mouse_motion.relative.length() > 1 * camera2d.zoom.x:
+			camera2d.position -= mouse_motion.relative * camera2d.zoom
 		if mouse_motion.relative.length() > 4 * camera2d.zoom.x:
 			var valid_select_point = map_border.has_point(select_point)
 			if valid_select_point and top_layer.get_cellv(select_point) == 1:
 				top_layer.set_cellv(select_point, 0)
 			select_point = Vector2(-1, -1)
+
+func _on_TextureButton_button_up():
+	_testBuild()
+
+func _on_restart_button_down():
+	_testBuild()
