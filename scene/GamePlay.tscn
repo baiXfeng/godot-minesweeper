@@ -16,7 +16,7 @@
 [ext_resource path="res://assets/images/32x32/flag.png" type="Texture" id=14]
 [ext_resource path="res://assets/images/32x32/misflagged.png" type="Texture" id=15]
 [ext_resource path="res://scene/Camera2D.gd" type="Script" id=16]
-[ext_resource path="res://assets/images/32x32/faceoh.png" type="Texture" id=17]
+[ext_resource path="res://scene/MenuPopupWindow.tscn" type="PackedScene" id=17]
 [ext_resource path="res://assets/fonts/pixel-font-title.tres" type="DynamicFont" id=18]
 
 [sub_resource type="TileSet" id=1]
@@ -277,16 +277,18 @@ anchor_right = 1.0
 margin_bottom = 64.0
 rect_min_size = Vector2( 0, 64 )
 
-[node name="TextureButton" type="TextureButton" parent="CanvasLayer/ColorRect/CenterContainer"]
-margin_left = 464.0
-margin_top = 16.0
-margin_right = 496.0
-margin_bottom = 48.0
-texture_normal = ExtResource( 17 )
-stretch_mode = 2
+[node name="menu" type="Label" parent="CanvasLayer/ColorRect/CenterContainer"]
+margin_left = 448.0
+margin_top = 24.0
+margin_right = 512.0
+margin_bottom = 40.0
+mouse_filter = 0
+custom_fonts/font = ExtResource( 18 )
+text = "MENU"
 
 [node name="HBoxContainer" type="HBoxContainer" parent="CanvasLayer/ColorRect"]
 anchor_bottom = 1.0
+custom_constants/separation = 15
 
 [node name="mine_text" type="Label" parent="CanvasLayer/ColorRect/HBoxContainer"]
 margin_top = 24.0
@@ -298,12 +300,21 @@ text = "MINE:"
 align = 2
 
 [node name="mine_size" type="Label" parent="CanvasLayer/ColorRect/HBoxContainer"]
-margin_left = 99.0
+margin_left = 110.0
 margin_top = 24.0
-margin_right = 131.0
+margin_right = 142.0
 margin_bottom = 40.0
 custom_fonts/font = ExtResource( 18 )
 text = "00"
+align = 2
+
+[node name="map_size" type="Label" parent="CanvasLayer/ColorRect/HBoxContainer"]
+margin_left = 157.0
+margin_top = 24.0
+margin_right = 237.0
+margin_bottom = 40.0
+custom_fonts/font = ExtResource( 18 )
+text = "10x10"
 align = 2
 
 [node name="HBoxContainer2" type="HBoxContainer" parent="CanvasLayer/ColorRect"]
@@ -330,7 +341,7 @@ margin_top = 24.0
 margin_right = 280.0
 margin_bottom = 40.0
 custom_fonts/font = ExtResource( 18 )
-text = "59:59"
+text = "01:00"
 valign = 1
 
 [node name="play_time" type="Label" parent="CanvasLayer/ColorRect/HBoxContainer2"]
@@ -426,5 +437,11 @@ custom_styles/focus = SubResource( 9 )
 custom_styles/normal = SubResource( 7 )
 text = "RESTART"
 
-[connection signal="button_up" from="CanvasLayer/ColorRect/CenterContainer/TextureButton" to="." method="_on_TextureButton_button_up"]
+[node name="MenuPopupWindow" parent="." instance=ExtResource( 17 )]
+
+[connection signal="gui_input" from="CanvasLayer/ColorRect/CenterContainer/menu" to="." method="_on_menu_gui_input"]
+[connection signal="mouse_entered" from="CanvasLayer/ColorRect/CenterContainer/menu" to="." method="_on_menu_mouse_entered"]
+[connection signal="mouse_exited" from="CanvasLayer/ColorRect/CenterContainer/menu" to="." method="_on_menu_mouse_exited"]
 [connection signal="button_down" from="CanvasLayer/CenterContainer/background/VBoxContainer/restart" to="." method="_on_restart_button_down"]
+[connection signal="on_hide" from="MenuPopupWindow" to="." method="_on_MenuPopupWindow_on_hide"]
+[connection signal="on_restart" from="MenuPopupWindow" to="." method="_on_MenuPopupWindow_on_restart"]

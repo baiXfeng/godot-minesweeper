@@ -9,9 +9,13 @@ onready var camera2d = $Camera2D
 onready var result_layer = $CanvasLayer/CenterContainer
 onready var play_time_label = $CanvasLayer/ColorRect/HBoxContainer2/play_time
 onready var mine_size_label = $CanvasLayer/ColorRect/HBoxContainer/mine_size
+onready var map_size_label = $CanvasLayer/ColorRect/HBoxContainer/map_size
 
-var map_size:Vector2
-var mine_size:int
+onready var menu_dialog_window = $MenuPopupWindow
+onready var menu_label = $CanvasLayer/ColorRect/CenterContainer/menu
+
+var map_size = Vector2(12, 12)
+var mine_size = 15
 var map_border:Rect2
 var select_point = Vector2(-1, -1)
 var mine_list = []
@@ -21,7 +25,7 @@ var play_second = 0.0
 
 var win_tips = "CONGRATULATIONS!\nYOU WIN!"
 var lose_tips = "GAME OVER!\nYOU SELECTED MINE!"
-var best_score = 65535
+var best_score = 60 * 59 + 59
 
 const MINE_ID = 8
 
@@ -44,10 +48,10 @@ const offsets_4 = [
 
 func _ready():
 	randomize()
-	_testBuild()
+	_Build()
 
-func _testBuild():
-	build_map(Vector2(10, 10), 10)
+func _Build():
+	build_map(map_size, mine_size)
 
 func build_map(mapSize:Vector2, mineSize:int):
 	
@@ -95,6 +99,12 @@ func build_map(mapSize:Vector2, mineSize:int):
 		_proc_mine_number(point)
 	
 	_update_mine_size()
+	_update_best_time()
+	
+	map_size_label.text = "{x}x{y}".format({
+		"x": int(map_size.x),
+		"y": int(map_size.y),
+	})
 	
 	var view_size = map_size * 32
 	var camera_position = view_size * 0.5
@@ -217,18 +227,18 @@ func _open_tile(point:Vector2):
 func _open_empty_tile(point:Vector2):
 
 	var check_list = [point]
-	var closed_list = []
+	var closed_list = {}
 	
 	while !check_list.empty():
 		var current = check_list.pop_back()
 		if _is_empty_tile(item_layer.get_cellv(current)):
 			for p in offsets_8:
 				var next = current + p
-				if next in closed_list:
+				if closed_list.has(next):
 					continue
 				if map_border.has_point(next):
 					check_list.push_back(next)
-		closed_list.push_back(current)
+		closed_list[current] = true
 	
 	for point in closed_list:
 		top_layer.set_cellv(point, -1)
@@ -295,17 +305,13 @@ func _set_tips(win:bool):
 		"value": "%0.2f" % (mine_list.size() / (map_size.x * map_size.y) * 100)
 	})
 	
-	var t = _second_to_vector(best_score)
-	$CanvasLayer/ColorRect/HBoxContainer2/best_score.text = "{m}:{s}".format({
-		"m": "%02d" % int(t.x),
-		"s": "%02d" % int(t.y),
-	})
-	
-	t = _second_to_vector(play_second)
+	var t = _second_to_vector(play_second)
 	$CanvasLayer/CenterContainer/background/VBoxContainer/timespent.text = "TIME SPENT: {m}:{s}".format({
 		"m": "%02d" % int(t.x),
 		"s": "%02d" % int(t.y),
 	})
+	
+	_update_best_time()
 
 func _check_point_invalid(point:Vector2):
 	var invalid = !map_border.has_point(point)
@@ -336,6 +342,13 @@ func _update_mine_size():
 		"size": "%02d" % value
 	})
 
+func _update_best_time():
+	var t = _second_to_vector(best_score)
+	$CanvasLayer/ColorRect/HBoxContainer2/best_score.text = "{m}:{s}".format({
+		"m": "%02d" % int(t.x),
+		"s": "%02d" % int(t.y),
+	})
+
 func _second_to_vector(second:float) -> Vector2:
 	var value = int(second)
 	var ret = Vector2(floor(value/60), value%60)
@@ -345,6 +358,8 @@ func _second_to_vector(second:float) -> Vector2:
 	return ret
 
 func _input(event):
+	if menu_dialog_window.visible:
+		return
 	var mouse = event as InputEventMouseButton
 	if mouse:
 		var mouse_position = camera2d.to_actual_position(mouse.position)
@@ -402,8 +417,32 @@ func _input(event):
 				top_layer.set_cellv(select_point, 0)
 			select_point = Vector2(-1, -1)
 
-func _on_TextureButton_button_up():
-	_testBuild()
-
 func _on_restart_button_down():
-	_testBuild()
+	_Build()
+
+func _on_menu_mouse_entered():
+	menu_label.modulate = Color(1, 0, 0, 1)
+
+func _on_menu_mouse_exited():
+	menu_label.modulate = Color(1, 1, 1, 1)
+
+func _on_menu_gui_input(event):
+	var mouse = event as InputEventMouseButton
+	if mouse and mouse.button_index == BUTTON_LEFT and mouse.pressed:
+		menu_label.modulate = Color(1, 1, 1, 1)
+		set_process(false)
+		$MenuPopupWindow.show()
+
+func _on_MenuPopupWindow_on_hide():
+	set_process(true)
+
+func _on_MenuPopupWindow_on_restart(mapSize:Vector2, mineSize:int):
+	if mapSize.x > 200:
+		mapSize.x = 200
+	if mapSize.y > 200:
+		mapSize.y = 200
+	if mineSize + 1 >= mapSize.x * mapSize.y:
+		mineSize = mapSize.x * mapSize.y - 1
+	if mapSize != map_size:
+		best_score = 60 * 59 + 59
+	build_map(mapSize, mineSize)
