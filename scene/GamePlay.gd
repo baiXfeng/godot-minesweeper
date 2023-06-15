@@ -22,13 +22,14 @@ var mine_list = []
 var first_open = true
 var mouse_pressed = false
 var play_second = 0.0
+var flag_mode = false
 
 var win_tips = "CONGRATULATIONS!\nYOU WIN!"
 var lose_tips = "GAME OVER!\nYOU SELECTED MINE!"
 var best_score = 60 * 59 + 59
 
-var is_vita_platform = false
-var vita_multifinger = []
+var is_vita_platform = OS.get_name() == "Vita"
+var vita_multifinger = [Vector2.ZERO, Vector2.ZERO] # 最多支持两个手指
 var vita_key_mapping = []
 
 const MINE_ID = 8
@@ -52,12 +53,6 @@ const offsets_4 = [
 
 func _ready():
 	randomize()
-	
-	is_vita_platform = OS.get_name() == "Vita" or true
-	print("vita platform:", is_vita_platform)
-	
-	vita_multifinger.resize(2)	# 最多支持两个手指
-	
 	_Build()
 
 func _Build():
@@ -69,6 +64,7 @@ func build_map(mapSize:Vector2, mineSize:int):
 	set_process(true)
 	
 	first_open = true
+	flag_mode = false
 	map_size = mapSize
 	mine_size = mineSize
 	map_border = Rect2(Vector2.ZERO, mapSize)
@@ -81,6 +77,10 @@ func build_map(mapSize:Vector2, mineSize:int):
 	mistake_layer.clear()
 	mine_list.clear()
 	result_layer.visible = false
+	camera2d.zoom = Vector2(1, 1)
+	
+	if is_vita_platform:
+		vita_multifinger = [Vector2.ZERO, Vector2.ZERO]
 	
 	var points = []
 	
@@ -189,6 +189,8 @@ func _auto_open_tile(point:Vector2):
 				continue
 			check = true
 			top_layer.set_cellv(next, -1)
+			if flag_mode:
+				flag_layer.set_cellv(next, -1)
 			var item_id = item_layer.get_cellv(next)
 			if _is_mine_tile(item_id):
 				game_over = true
@@ -252,6 +254,8 @@ func _open_empty_tile(point:Vector2):
 	
 	for point in closed_list:
 		top_layer.set_cellv(point, -1)
+		if flag_layer:
+			flag_layer.set_cellv(point, -1)
 
 func _is_number_tile(id:int):
 	return id >= 0 and id <= 7
@@ -377,8 +381,25 @@ func _input(event):
 		_onMouseInput(event)
 		return
 
+func _switch_flag_mode():
+	flag_mode = !flag_mode
+	if flag_mode:
+		var used_cells = top_layer.get_used_cells()
+		for cell in used_cells:
+			var id = flag_layer.get_cellv(cell)
+			if !_is_flag_tile(id):
+				flag_layer.set_cellv(cell, 1)
+	else:
+		var used_cells = flag_layer.get_used_cells()
+		for cell in used_cells:
+			var id = flag_layer.get_cellv(cell)
+			if !_is_flag_tile(id):
+				flag_layer.set_cellv(cell, -1)
+
 func _is_multifinger():
 	return vita_multifinger[0] != Vector2.ZERO and vita_multifinger[1] != Vector2.ZERO
+
+var _fix_vita_relative = false	# psvita触屏移动手指relative值不正确
 
 func _onVitaInput(event):
 	var touch = event as InputEventScreenTouch
@@ -391,11 +412,13 @@ func _onVitaInput(event):
 				vita_multifinger[touch.index] = touch.position
 			if touch.index == 0:
 				_on_touch_down(touch.position)
+				_fix_vita_relative = true
 		else:
 			if touch.index < vita_multifinger.size():
 				vita_multifinger[touch.index] = Vector2.ZERO
 			if touch.index == 0:
 				_on_touch_up(touch.position)
+				_fix_vita_relative = false
 		
 		return
 	var touch_motion = event as InputEventScreenDrag
@@ -422,12 +445,12 @@ func _onVitaInput(event):
 			var value = (length1 - length0) * 0.005
 			camera2d.zoom -= Vector2(value, value)
 			
-			var min_zoom = Vector2(0.25, 0.4)
+			var min_zoom = Vector2(0.25, 0.25)
 			var max_zoom =  Vector2(1.75, 1.75)
 			
-			if value > 0 and camera2d.zoom < min_zoom:
+			if value > 0 and camera2d.zoom.x < min_zoom.x:
 				camera2d.zoom = min_zoom
-			elif value < 0 and camera2d.zoom > max_zoom:
+			elif value < 0 and camera2d.zoom.x > max_zoom.x:
 				camera2d.zoom = max_zoom
 			
 			mouse_pressed = false
@@ -435,6 +458,10 @@ func _onVitaInput(event):
 			#print("zoom:\t", length0, "\t", length1, "\t", camera2d.zoom)
 		
 		else:
+			# 跳过第一次触屏移动
+			if _fix_vita_relative:
+				_fix_vita_relative = false
+				return
 			if touch_motion.index == 0 and mouse_pressed:
 				_on_touch_moved(touch_motion.position, touch_motion.relative)
 			
@@ -455,60 +482,33 @@ func _onMouseInput(event):
 		if mouse.button_index == BUTTON_RIGHT and mouse.pressed:
 			var point = (mouse_position / 32).floor()
 			if map_border.has_point(point) and !_is_empty_tile(top_layer.get_cellv(point)):
-				if _is_flag_tile(flag_layer.get_cellv(point)):
-					flag_layer.set_cellv(point, -1)
-				else:
-					flag_layer.set_cellv(point, 0)
+				_set_tile_flag(point)
 				_update_mine_size()
 			return
 		if mouse.button_index == BUTTON_LEFT:
-			var point = (mouse_position / 32).floor()
 			if mouse.pressed:
-				select_point = Vector2(-1, -1)
-				if !map_border.has_point(point):
-					return
-				mouse_pressed = true
-				if _is_empty_tile(top_layer.get_cellv(point)):
-					if _is_number_tile(item_layer.get_cellv(point)):
-						_auto_open_tile(point)
-					return
-				if _is_flag_tile(flag_layer.get_cellv(point)):
-					return
-				top_layer.set_cellv(point, 1)
-				select_point = point
+				_on_touch_down(mouse.position)
 			else:
-				var new_point = (mouse_position / 32).floor()
-				var valid_select_point = map_border.has_point(select_point)
-				mouse_pressed = false
-				if new_point != select_point and valid_select_point:
-					top_layer.set_cellv(select_point, 0)
-					return
-				if valid_select_point:
-					top_layer.set_cellv(select_point, -1)
-					_open_tile(select_point)
-					if _check_win():
-						_proc_win()
+				_on_touch_up(mouse.position)
 			return
-		"""
-			if mouse.button_index == BUTTON_MIDDLE and mouse.pressed:
-			var point = (mouse_position / 32).floor()
-			if map_border.has_point(point):
-				top_layer.set_cellv(point, 0)
-		"""
-
+		if mouse.button_index == BUTTON_MIDDLE:
+			#if mouse.pressed:
+			#	_switch_flag_mode()
+			return
 		return
 	
 	var mouse_motion = event as InputEventMouseMotion
 	if mouse_motion and mouse_pressed:
-		if mouse_motion.relative.length() > 1 * camera2d.zoom.x:
-			camera2d.position -= mouse_motion.relative * camera2d.zoom.x
-		if mouse_motion.relative.length() > 4 * camera2d.zoom.x:
-			var valid_select_point = map_border.has_point(select_point)
-			if valid_select_point and top_layer.get_cellv(select_point) == 1:
-				top_layer.set_cellv(select_point, 0)
-			select_point = Vector2(-1, -1)
+		_on_touch_moved(mouse_motion.position, mouse_motion.relative)
 
-	pass
+func _set_tile_flag(point:Vector2):
+	if _is_flag_tile(flag_layer.get_cellv(point)):
+		var id = -1
+		if flag_mode:
+			id = 1
+		flag_layer.set_cellv(point, id)
+	else:
+		flag_layer.set_cellv(point, 0)
 
 func _on_touch_down(position:Vector2):
 	var mouse_position = camera2d.to_actual_position(position)
@@ -521,15 +521,21 @@ func _on_touch_down(position:Vector2):
 		if _is_number_tile(item_layer.get_cellv(point)):
 			_auto_open_tile(point)
 		return
+	if flag_mode:
+		_set_tile_flag(point)
+		return
 	if _is_flag_tile(flag_layer.get_cellv(point)):
 		return
 	top_layer.set_cellv(point, 1)
 	select_point = point
 
 func _on_touch_moved(position:Vector2, relative:Vector2):
-	if relative.length() > 1 * camera2d.zoom.x:
+	var mouse_position = camera2d.to_actual_position(position)
+	var move_camera_length = 1
+	var unselect_tile_length = 4
+	if relative.length() > move_camera_length / camera2d.zoom.x:
 		camera2d.position -= relative * camera2d.zoom.x
-	if relative.length() > 4 * camera2d.zoom.x:
+	if relative.length() > unselect_tile_length / camera2d.zoom.x:
 		var valid_select_point = map_border.has_point(select_point)
 		if valid_select_point and top_layer.get_cellv(select_point) == 1:
 			top_layer.set_cellv(select_point, 0)
