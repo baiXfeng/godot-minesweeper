@@ -1,0 +1,97 @@
+[gd_scene load_steps=7 format=2]
+
+[ext_resource path="res://assets/fonts/pixel-font-title.tres" type="DynamicFont" id=1]
+[ext_resource path="res://scene/ResultLayer.gd" type="Script" id=2]
+
+[sub_resource type="StyleBoxEmpty" id=8]
+
+[sub_resource type="StyleBoxEmpty" id=6]
+
+[sub_resource type="StyleBoxEmpty" id=9]
+
+[sub_resource type="StyleBoxEmpty" id=7]
+
+[node name="ResultLayer" type="CanvasLayer"]
+script = ExtResource( 2 )
+
+[node name="Control" type="Control" parent="."]
+anchor_right = 1.0
+anchor_bottom = 1.0
+
+[node name="CenterContainer" type="CenterContainer" parent="Control"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+margin_top = 64.0
+margin_bottom = -16.0
+
+[node name="background" type="ColorRect" parent="Control/CenterContainer"]
+margin_left = 280.0
+margin_top = 82.0
+margin_right = 680.0
+margin_bottom = 382.0
+rect_min_size = Vector2( 400, 300 )
+color = Color( 0, 0, 0, 0.705882 )
+
+[node name="VBoxContainer" type="VBoxContainer" parent="Control/CenterContainer/background"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+
+[node name="title" type="Label" parent="Control/CenterContainer/background/VBoxContainer"]
+margin_right = 400.0
+margin_bottom = 130.0
+rect_min_size = Vector2( 0, 130 )
+custom_constants/line_spacing = 18
+custom_fonts/font = ExtResource( 1 )
+text = "CONGRATULATIONS!
+YOU WIN!"
+align = 1
+valign = 1
+
+[node name="mapsize" type="Label" parent="Control/CenterContainer/background/VBoxContainer"]
+margin_top = 134.0
+margin_right = 400.0
+margin_bottom = 164.0
+rect_min_size = Vector2( 0, 30 )
+custom_constants/line_spacing = 18
+custom_fonts/font = ExtResource( 1 )
+text = "MAP SIZE: 12x12"
+align = 1
+valign = 1
+
+[node name="mineratio" type="Label" parent="Control/CenterContainer/background/VBoxContainer"]
+margin_top = 168.0
+margin_right = 400.0
+margin_bottom = 198.0
+rect_min_size = Vector2( 0, 30 )
+custom_constants/line_spacing = 18
+custom_fonts/font = ExtResource( 1 )
+text = "MINE RATIO: 25%"
+align = 1
+valign = 1
+
+[node name="timespent" type="Label" parent="Control/CenterContainer/background/VBoxContainer"]
+margin_top = 202.0
+margin_right = 400.0
+margin_bottom = 232.0
+rect_min_size = Vector2( 0, 30 )
+custom_constants/line_spacing = 18
+custom_fonts/font = ExtResource( 1 )
+text = "TIME SPENT: 00:30"
+align = 1
+valign = 1
+
+[node name="restart" type="Button" parent="Control/CenterContainer/background/VBoxContainer"]
+margin_top = 236.0
+margin_right = 400.0
+margin_bottom = 276.0
+rect_min_size = Vector2( 0, 40 )
+custom_colors/font_color = Color( 1, 1, 1, 1 )
+custom_colors/font_color_hover = Color( 1, 0, 0, 1 )
+custom_fonts/font = ExtResource( 1 )
+custom_styles/hover = SubResource( 8 )
+custom_styles/pressed = SubResource( 6 )
+custom_styles/focus = SubResource( 9 )
+custom_styles/normal = SubResource( 7 )
+text = "RESTART"
+
+[connection signal="button_up" from="Control/CenterContainer/background/VBoxContainer/restart" to="." method="_on_restart_button_up"]

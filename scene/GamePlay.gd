@@ -6,13 +6,15 @@ onready var top_layer = $TopLayer
 onready var flag_layer = $FlagLayer
 onready var mistake_layer = $MistakeLayer
 onready var camera2d = $Camera2D
-onready var result_layer = $CanvasLayer/CenterContainer
+onready var result_layer = $ResultLayer
+onready var help_layer = $HelpWindow
 onready var play_time_label = $CanvasLayer/ColorRect/HBoxContainer2/play_time
 onready var mine_size_label = $CanvasLayer/ColorRect/HBoxContainer/mine_size
 onready var map_size_label = $CanvasLayer/ColorRect/HBoxContainer/map_size
 
 onready var menu_dialog_window = $MenuPopupWindow
-onready var menu_label = $CanvasLayer/ColorRect/CenterContainer/menu
+onready var menu_label = $CanvasLayer/ColorRect/CenterContainer/HBoxContainer/menu
+onready var help_label = $CanvasLayer/ColorRect/CenterContainer/HBoxContainer/help
 
 var map_size = Vector2(12, 12)
 var mine_size = 15
@@ -26,9 +28,7 @@ var flag_mode = false
 
 var win_tips = "CONGRATULATIONS!\nYOU WIN!"
 var lose_tips = "GAME OVER!\nYOU SELECTED MINE!"
-var best_score = 60 * 59 + 59
 
-var is_vita_platform = OS.get_name() == "Vita"
 var vita_multifinger = [Vector2.ZERO, Vector2.ZERO] # 最多支持两个手指
 var vita_key_mapping = []
 
@@ -60,7 +60,6 @@ func _Build():
 
 func build_map(mapSize:Vector2, mineSize:int):
 	
-	set_process_input(true)
 	set_process(true)
 	
 	first_open = true
@@ -70,6 +69,9 @@ func build_map(mapSize:Vector2, mineSize:int):
 	map_border = Rect2(Vector2.ZERO, mapSize)
 	play_second = 0.0
 	
+	Autoload.map_size = map_size
+	Autoload.mine_size = mine_size
+	
 	ground_layer.clear()
 	item_layer.clear()
 	top_layer.clear()
@@ -77,9 +79,9 @@ func build_map(mapSize:Vector2, mineSize:int):
 	mistake_layer.clear()
 	mine_list.clear()
 	result_layer.visible = false
-	camera2d.zoom = Vector2(1, 1)
 	
-	if is_vita_platform:
+	if Autoload.is_vita_platform:
+		# 限制最多双指操作
 		vita_multifinger = [Vector2.ZERO, Vector2.ZERO]
 	
 	var points = []
@@ -280,51 +282,17 @@ func _check_win():
 
 func _proc_win():
 	print("win.")
-	set_process_input(false)
 	set_process(false)
-	_set_tips(true)
+	_show_result(true)
 
 func _proc_game_over():
 	print("game over.")
-	set_process_input(false)
 	set_process(false)
-	_set_tips(false)
+	_show_result(false)
 
-func _set_tips(win:bool):
-	
+func _show_result(win:bool):
 	yield(get_tree().create_timer(0.5), "timeout")
-	
-	result_layer.visible = true
-	
-	var new_record = false
-	if win and play_second < best_score:
-		best_score = play_second
-		new_record = true
-	
-	var win_tips_copy = win_tips
-	if new_record:
-		win_tips_copy = win_tips + "\nNEW RECORD!"
-	
-	if win:
-		$CanvasLayer/CenterContainer/background/VBoxContainer/title.text = win_tips_copy
-	else:
-		$CanvasLayer/CenterContainer/background/VBoxContainer/title.text = lose_tips
-	
-	$CanvasLayer/CenterContainer/background/VBoxContainer/mapsize.text = "MAP SIZE: {x}x{y}".format({
-		"x": int(map_size.x),
-		"y": int(map_size.y),
-	})
-	
-	$CanvasLayer/CenterContainer/background/VBoxContainer/mineratio.text = "MINE RATIO: {value}%".format({
-		"value": "%0.2f" % (mine_list.size() / (map_size.x * map_size.y) * 100)
-	})
-	
-	var t = _second_to_vector(play_second)
-	$CanvasLayer/CenterContainer/background/VBoxContainer/timespent.text = "TIME SPENT: {m}:{s}".format({
-		"m": "%02d" % int(t.x),
-		"s": "%02d" % int(t.y),
-	})
-	
+	result_layer.show_result(win)
 	_update_best_time()
 
 func _check_point_invalid(point:Vector2):
@@ -335,6 +303,7 @@ func _check_point_invalid(point:Vector2):
 
 func _process(delta):
 	play_second += delta
+	Autoload.play_time = play_second
 	_update_play_time()
 
 func _update_play_time():
@@ -357,6 +326,7 @@ func _update_mine_size():
 	})
 
 func _update_best_time():
+	var best_score = Autoload.best_score
 	var t = _second_to_vector(best_score)
 	$CanvasLayer/ColorRect/HBoxContainer2/best_score.text = "{m}:{s}".format({
 		"m": "%02d" % int(t.x),
@@ -372,9 +342,9 @@ func _second_to_vector(second:float) -> Vector2:
 	return ret
 
 func _input(event):
-	if menu_dialog_window.visible:
+	if menu_dialog_window.visible or result_layer.visible or help_layer.visible:
 		return
-	if is_vita_platform:
+	if Autoload.is_vita_platform:
 		_onVitaInput(event)
 		return
 	else:
@@ -443,15 +413,7 @@ func _onVitaInput(event):
 			
 			var length1 = vita_multifinger[0].distance_to(vita_multifinger[1])
 			var value = (length1 - length0) * 0.005
-			camera2d.zoom -= Vector2(value, value)
-			
-			var min_zoom = Vector2(0.25, 0.25)
-			var max_zoom =  Vector2(1.75, 1.75)
-			
-			if value > 0 and camera2d.zoom.x < min_zoom.x:
-				camera2d.zoom = min_zoom
-			elif value < 0 and camera2d.zoom.x > max_zoom.x:
-				camera2d.zoom = max_zoom
+			_zoom_camera(value)
 			
 			mouse_pressed = false
 			
@@ -469,11 +431,20 @@ func _onVitaInput(event):
 	var joypad = event as InputEventJoypadButton
 	if joypad:
 		#print("joypad button:", joypad.button_index)
+		if Input.is_action_just_pressed("ui_page_down") or Input.is_action_just_pressed("ui_page_up"):
+			_switch_flag_mode()
 		return
 	var joypad_motion = event as InputEventJoypadMotion
 	if joypad_motion and abs(joypad_motion.axis_value) > 0.25:
 		#print("joypad motion:", joypad_motion.axis, "\t", joypad_motion.axis_value)
 		return
+
+func _zoom_camera(value:float, min_zoom:Vector2 = Vector2(0.25, 0.25), max_zoom:Vector2 = Vector2(1.75, 1.75)):
+	camera2d.zoom -= Vector2(value, value)
+	if value > 0 and camera2d.zoom.x < min_zoom.x:
+		camera2d.zoom = min_zoom
+	elif value < 0 and camera2d.zoom.x > max_zoom.x:
+		camera2d.zoom = max_zoom
 
 func _onMouseInput(event):
 	var mouse = event as InputEventMouseButton
@@ -491,11 +462,18 @@ func _onMouseInput(event):
 			else:
 				_on_touch_up(mouse.position)
 			return
-		if mouse.button_index == BUTTON_MIDDLE:
+		elif mouse.button_index == BUTTON_MIDDLE:
 			#if mouse.pressed:
 			#	_switch_flag_mode()
 			return
-		return
+		elif mouse.button_index == BUTTON_WHEEL_UP:
+			_zoom_camera(mouse.factor * 0.05)
+			return
+		elif mouse.button_index == BUTTON_WHEEL_DOWN:
+			_zoom_camera(mouse.factor * -0.05, Vector2(0.25, 0.25), Vector2(3, 3))
+			return
+		else:
+			return
 	
 	var mouse_motion = event as InputEventMouseMotion
 	if mouse_motion and mouse_pressed:
@@ -556,7 +534,21 @@ func _on_touch_up(position:Vector2):
 		if _check_win():
 			_proc_win()
 
-func _on_restart_button_down():
+func _on_MenuPopupWindow_on_hide():
+	set_process(true)
+
+func _on_MenuPopupWindow_on_restart(mapSize:Vector2, mineSize:int):
+	if mapSize.x > 200:
+		mapSize.x = 200
+	if mapSize.y > 200:
+		mapSize.y = 200
+	if mineSize + 1 >= mapSize.x * mapSize.y:
+		mineSize = mapSize.x * mapSize.y - 1
+	if mapSize != map_size:
+		Autoload.best_score = 60 * 59 + 59
+	build_map(mapSize, mineSize)
+
+func _on_ResultLayer_on_restart():
 	_Build()
 
 func _on_menu_mouse_entered():
@@ -572,16 +564,18 @@ func _on_menu_gui_input(event):
 		set_process(false)
 		$MenuPopupWindow.show()
 
-func _on_MenuPopupWindow_on_hide():
-	set_process(true)
+func _on_help_mouse_entered():
+	help_label.modulate = Color(1, 0, 0, 1)
 
-func _on_MenuPopupWindow_on_restart(mapSize:Vector2, mineSize:int):
-	if mapSize.x > 200:
-		mapSize.x = 200
-	if mapSize.y > 200:
-		mapSize.y = 200
-	if mineSize + 1 >= mapSize.x * mapSize.y:
-		mineSize = mapSize.x * mapSize.y - 1
-	if mapSize != map_size:
-		best_score = 60 * 59 + 59
-	build_map(mapSize, mineSize)
+func _on_help_mouse_exited():
+	help_label.modulate = Color(1, 1, 1, 1)
+
+func _on_help_gui_input(event):
+	var mouse = event as InputEventMouseButton
+	if mouse and mouse.button_index == BUTTON_LEFT and mouse.pressed:
+		help_label.modulate = Color(1, 1, 1, 1)
+		set_process(false)
+		help_layer.show()
+
+func _on_HelpWindow_on_hide():
+	set_process(true)

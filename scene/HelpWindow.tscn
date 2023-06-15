@@ -1,0 +1,147 @@
+[gd_scene load_steps=3 format=2]
+
+[ext_resource path="res://scene/HelpWindow.gd" type="Script" id=1]
+[ext_resource path="res://assets/fonts/pixel-font-title.tres" type="DynamicFont" id=2]
+
+[node name="HelpWindow" type="CanvasLayer"]
+script = ExtResource( 1 )
+
+[node name="PcInfoBox" type="Control" parent="."]
+visible = false
+anchor_right = 1.0
+anchor_bottom = 1.0
+
+[node name="CenterContainer" type="CenterContainer" parent="PcInfoBox"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+margin_top = 68.0
+
+[node name="WindowDialog" type="WindowDialog" parent="PcInfoBox/CenterContainer"]
+visible = true
+margin_left = 270.0
+margin_top = 108.0
+margin_right = 690.0
+margin_bottom = 368.0
+rect_min_size = Vector2( 420, 260 )
+custom_fonts/title_font = ExtResource( 2 )
+popup_exclusive = true
+
+[node name="VBoxContainer" type="VBoxContainer" parent="PcInfoBox/CenterContainer/WindowDialog"]
+margin_left = 18.0
+margin_top = 50.0
+margin_right = 402.0
+margin_bottom = 207.0
+custom_constants/separation = 22
+
+[node name="left" type="Label" parent="PcInfoBox/CenterContainer/WindowDialog/VBoxContainer"]
+self_modulate = Color( 1, 0, 0, 1 )
+margin_right = 384.0
+margin_bottom = 16.0
+custom_fonts/font = ExtResource( 2 )
+text = "MOUSE LEFT: CLEAR A CELL"
+
+[node name="right" type="Label" parent="PcInfoBox/CenterContainer/WindowDialog/VBoxContainer"]
+self_modulate = Color( 1, 0, 0, 1 )
+margin_top = 38.0
+margin_right = 384.0
+margin_bottom = 54.0
+custom_fonts/font = ExtResource( 2 )
+text = "MOUSE RIGHT: MAKE A FLAG"
+
+[node name="wheel" type="Label" parent="PcInfoBox/CenterContainer/WindowDialog/VBoxContainer"]
+self_modulate = Color( 1, 0, 0, 1 )
+margin_top = 76.0
+margin_right = 384.0
+margin_bottom = 92.0
+custom_fonts/font = ExtResource( 2 )
+text = "MOUSE WHEEL: ZOOM MAP"
+
+[node name="Close" type="Button" parent="PcInfoBox/CenterContainer/WindowDialog"]
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+margin_top = -44.0
+margin_bottom = -4.0
+rect_min_size = Vector2( 0, 40 )
+custom_fonts/font = ExtResource( 2 )
+text = "CLOSE"
+
+[node name="VitaInfoBox" type="Control" parent="."]
+anchor_right = 1.0
+anchor_bottom = 1.0
+
+[node name="CenterContainer" type="CenterContainer" parent="VitaInfoBox"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+margin_top = 68.0
+
+[node name="WindowDialog" type="WindowDialog" parent="VitaInfoBox/CenterContainer"]
+visible = true
+margin_left = 270.0
+margin_top = 108.0
+margin_right = 690.0
+margin_bottom = 368.0
+rect_min_size = Vector2( 420, 260 )
+custom_fonts/title_font = ExtResource( 2 )
+popup_exclusive = true
+
+[node name="VBoxContainer" type="VBoxContainer" parent="VitaInfoBox/CenterContainer/WindowDialog"]
+margin_left = 18.0
+margin_top = 24.0
+margin_right = 402.0
+margin_bottom = 207.0
+custom_constants/separation = 20
+
+[node name="homepage" type="Label" parent="VitaInfoBox/CenterContainer/WindowDialog/VBoxContainer"]
+margin_right = 384.0
+margin_bottom = 16.0
+custom_fonts/font = ExtResource( 2 )
+text = "HOME PAGE:"
+
+[node name="url" type="Label" parent="VitaInfoBox/CenterContainer/WindowDialog/VBoxContainer"]
+margin_top = 36.0
+margin_right = 384.0
+margin_bottom = 52.0
+custom_fonts/font = ExtResource( 2 )
+text = "HTTPS://BAIXFENG.ITCH.IO"
+
+[node name="left" type="Label" parent="VitaInfoBox/CenterContainer/WindowDialog/VBoxContainer"]
+self_modulate = Color( 1, 0, 0, 1 )
+margin_top = 72.0
+margin_right = 384.0
+margin_bottom = 88.0
+custom_fonts/font = ExtResource( 2 )
+text = "ONE FINGER: CLEAR A CELL"
+
+[node name="wheel" type="Label" parent="VitaInfoBox/CenterContainer/WindowDialog/VBoxContainer"]
+self_modulate = Color( 1, 0, 0, 1 )
+margin_top = 108.0
+margin_right = 384.0
+margin_bottom = 124.0
+custom_fonts/font = ExtResource( 2 )
+text = "TWO FINGER: ZOOM MAP"
+
+[node name="right" type="Label" parent="VitaInfoBox/CenterContainer/WindowDialog/VBoxContainer"]
+self_modulate = Color( 1, 0, 0, 1 )
+margin_top = 144.0
+margin_right = 384.0
+margin_bottom = 160.0
+custom_fonts/font = ExtResource( 2 )
+text = "L/R: FLAG MODE"
+
+[node name="Close" type="Button" parent="VitaInfoBox/CenterContainer/WindowDialog"]
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+margin_left = -1.0
+margin_top = -43.0
+margin_right = -1.0
+margin_bottom = -3.0
+rect_min_size = Vector2( 0, 40 )
+custom_fonts/font = ExtResource( 2 )
+text = "CLOSE"
+
+[connection signal="popup_hide" from="PcInfoBox/CenterContainer/WindowDialog" to="." method="_on_WindowDialog_popup_hide"]
+[connection signal="button_up" from="PcInfoBox/CenterContainer/WindowDialog/Close" to="." method="_on_Close_button_up"]
+[connection signal="popup_hide" from="VitaInfoBox/CenterContainer/WindowDialog" to="." method="_on_WindowDialog_popup_hide"]
+[connection signal="button_up" from="VitaInfoBox/CenterContainer/WindowDialog/Close" to="." method="_on_Close_button_up"]

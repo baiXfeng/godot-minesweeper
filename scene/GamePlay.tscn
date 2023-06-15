@@ -1,4 +1,4 @@
-[gd_scene load_steps=29 format=2]
+[gd_scene load_steps=27 format=2]
 
 [ext_resource path="res://scene/GamePlay.gd" type="Script" id=1]
 [ext_resource path="res://assets/images/32x32/opentile.png" type="Texture" id=2]
@@ -19,6 +19,8 @@
 [ext_resource path="res://scene/MenuPopupWindow.tscn" type="PackedScene" id=17]
 [ext_resource path="res://assets/fonts/pixel-font-title.tres" type="DynamicFont" id=18]
 [ext_resource path="res://assets/images/32x32/flag-mask.png" type="Texture" id=19]
+[ext_resource path="res://scene/ResultLayer.tscn" type="PackedScene" id=20]
+[ext_resource path="res://scene/HelpWindow.tscn" type="PackedScene" id=21]
 
 [sub_resource type="TileSet" id=1]
 0/name = "opentile.png 0"
@@ -240,14 +242,6 @@
 0/shapes = [  ]
 0/z_index = 0
 
-[sub_resource type="StyleBoxEmpty" id=8]
-
-[sub_resource type="StyleBoxEmpty" id=6]
-
-[sub_resource type="StyleBoxEmpty" id=9]
-
-[sub_resource type="StyleBoxEmpty" id=7]
-
 [node name="GamePlay" type="Node2D"]
 script = ExtResource( 1 )
 
@@ -277,6 +271,7 @@ cell_size = Vector2( 32, 32 )
 format = 1
 
 [node name="Camera2D" type="Camera2D" parent="."]
+position = Vector2( 480, 272 )
 current = true
 script = ExtResource( 16 )
 
@@ -284,50 +279,62 @@ script = ExtResource( 16 )
 
 [node name="ColorRect" type="ColorRect" parent="CanvasLayer"]
 anchor_right = 1.0
-rect_min_size = Vector2( 0, 64 )
+rect_min_size = Vector2( 0, 48 )
 color = Color( 0, 0, 0, 0.470588 )
 
 [node name="CenterContainer" type="CenterContainer" parent="CanvasLayer/ColorRect"]
 anchor_right = 1.0
-margin_bottom = 64.0
-rect_min_size = Vector2( 0, 64 )
+anchor_bottom = 1.0
 
-[node name="menu" type="Label" parent="CanvasLayer/ColorRect/CenterContainer"]
-margin_left = 448.0
-margin_top = 24.0
-margin_right = 512.0
-margin_bottom = 40.0
+[node name="HBoxContainer" type="HBoxContainer" parent="CanvasLayer/ColorRect/CenterContainer"]
+margin_left = 406.0
+margin_top = 16.0
+margin_right = 554.0
+margin_bottom = 32.0
+custom_constants/separation = 20
+
+[node name="menu" type="Label" parent="CanvasLayer/ColorRect/CenterContainer/HBoxContainer"]
+margin_right = 64.0
+margin_bottom = 16.0
 mouse_filter = 0
 custom_fonts/font = ExtResource( 18 )
 text = "MENU"
 
+[node name="help" type="Label" parent="CanvasLayer/ColorRect/CenterContainer/HBoxContainer"]
+margin_left = 84.0
+margin_right = 148.0
+margin_bottom = 16.0
+mouse_filter = 0
+custom_fonts/font = ExtResource( 18 )
+text = "HELP"
+
 [node name="HBoxContainer" type="HBoxContainer" parent="CanvasLayer/ColorRect"]
 anchor_bottom = 1.0
-custom_constants/separation = 15
+custom_constants/separation = 10
 
 [node name="mine_text" type="Label" parent="CanvasLayer/ColorRect/HBoxContainer"]
-margin_top = 24.0
+margin_top = 16.0
 margin_right = 95.0
-margin_bottom = 40.0
+margin_bottom = 32.0
 rect_min_size = Vector2( 95, 0 )
 custom_fonts/font = ExtResource( 18 )
 text = "MINE:"
 align = 2
 
 [node name="mine_size" type="Label" parent="CanvasLayer/ColorRect/HBoxContainer"]
-margin_left = 110.0
-margin_top = 24.0
-margin_right = 142.0
-margin_bottom = 40.0
+margin_left = 105.0
+margin_top = 16.0
+margin_right = 137.0
+margin_bottom = 32.0
 custom_fonts/font = ExtResource( 18 )
 text = "00"
 align = 2
 
 [node name="map_size" type="Label" parent="CanvasLayer/ColorRect/HBoxContainer"]
-margin_left = 157.0
-margin_top = 24.0
-margin_right = 237.0
-margin_bottom = 40.0
+margin_left = 147.0
+margin_top = 16.0
+margin_right = 227.0
+margin_bottom = 32.0
 custom_fonts/font = ExtResource( 18 )
 text = "10x10"
 align = 2
@@ -342,9 +349,9 @@ alignment = 2
 
 [node name="best_text" type="Label" parent="CanvasLayer/ColorRect/HBoxContainer2"]
 margin_left = 110.0
-margin_top = 24.0
+margin_top = 16.0
 margin_right = 190.0
-margin_bottom = 40.0
+margin_bottom = 32.0
 custom_fonts/font = ExtResource( 18 )
 text = "BEST:"
 align = 2
@@ -352,18 +359,18 @@ valign = 1
 
 [node name="best_score" type="Label" parent="CanvasLayer/ColorRect/HBoxContainer2"]
 margin_left = 200.0
-margin_top = 24.0
+margin_top = 16.0
 margin_right = 280.0
-margin_bottom = 40.0
+margin_bottom = 32.0
 custom_fonts/font = ExtResource( 18 )
 text = "01:00"
 valign = 1
 
 [node name="play_time" type="Label" parent="CanvasLayer/ColorRect/HBoxContainer2"]
 margin_left = 290.0
-margin_top = 24.0
+margin_top = 16.0
 margin_right = 380.0
-margin_bottom = 40.0
+margin_bottom = 32.0
 rect_min_size = Vector2( 90, 0 )
 custom_fonts/font = ExtResource( 18 )
 text = "00:00"
@@ -373,90 +380,25 @@ valign = 1
 [node name="Control" type="Control" parent="CanvasLayer/ColorRect/HBoxContainer2"]
 margin_left = 390.0
 margin_right = 400.0
-margin_bottom = 64.0
+margin_bottom = 48.0
 rect_min_size = Vector2( 10, 0 )
 
-[node name="CenterContainer" type="CenterContainer" parent="CanvasLayer"]
-anchor_right = 1.0
-anchor_bottom = 1.0
-margin_top = 64.0
-margin_bottom = -16.0
-
-[node name="background" type="ColorRect" parent="CanvasLayer/CenterContainer"]
-margin_left = 280.0
-margin_top = 82.0
-margin_right = 680.0
-margin_bottom = 382.0
-rect_min_size = Vector2( 400, 300 )
-color = Color( 0, 0, 0, 0.705882 )
-
-[node name="VBoxContainer" type="VBoxContainer" parent="CanvasLayer/CenterContainer/background"]
-anchor_right = 1.0
-anchor_bottom = 1.0
-
-[node name="title" type="Label" parent="CanvasLayer/CenterContainer/background/VBoxContainer"]
-margin_right = 400.0
-margin_bottom = 130.0
-rect_min_size = Vector2( 0, 130 )
-custom_constants/line_spacing = 18
-custom_fonts/font = ExtResource( 18 )
-text = "CONGRATULATIONS!
-YOU WIN!"
-align = 1
-valign = 1
-
-[node name="mapsize" type="Label" parent="CanvasLayer/CenterContainer/background/VBoxContainer"]
-margin_top = 134.0
-margin_right = 400.0
-margin_bottom = 164.0
-rect_min_size = Vector2( 0, 30 )
-custom_constants/line_spacing = 18
-custom_fonts/font = ExtResource( 18 )
-text = "MAP SIZE: 12x12"
-align = 1
-valign = 1
-
-[node name="mineratio" type="Label" parent="CanvasLayer/CenterContainer/background/VBoxContainer"]
-margin_top = 168.0
-margin_right = 400.0
-margin_bottom = 198.0
-rect_min_size = Vector2( 0, 30 )
-custom_constants/line_spacing = 18
-custom_fonts/font = ExtResource( 18 )
-text = "MINE RATIO: 25%"
-align = 1
-valign = 1
-
-[node name="timespent" type="Label" parent="CanvasLayer/CenterContainer/background/VBoxContainer"]
-margin_top = 202.0
-margin_right = 400.0
-margin_bottom = 232.0
-rect_min_size = Vector2( 0, 30 )
-custom_constants/line_spacing = 18
-custom_fonts/font = ExtResource( 18 )
-text = "TIME SPENT: 00:30"
-align = 1
-valign = 1
-
-[node name="restart" type="Button" parent="CanvasLayer/CenterContainer/background/VBoxContainer"]
-margin_top = 236.0
-margin_right = 400.0
-margin_bottom = 276.0
-rect_min_size = Vector2( 0, 40 )
-custom_colors/font_color = Color( 1, 1, 1, 1 )
-custom_colors/font_color_hover = Color( 1, 0, 0, 1 )
-custom_fonts/font = ExtResource( 18 )
-custom_styles/hover = SubResource( 8 )
-custom_styles/pressed = SubResource( 6 )
-custom_styles/focus = SubResource( 9 )
-custom_styles/normal = SubResource( 7 )
-text = "RESTART"
-
 [node name="MenuPopupWindow" parent="." instance=ExtResource( 17 )]
+visible = false
 
-[connection signal="gui_input" from="CanvasLayer/ColorRect/CenterContainer/menu" to="." method="_on_menu_gui_input"]
-[connection signal="mouse_entered" from="CanvasLayer/ColorRect/CenterContainer/menu" to="." method="_on_menu_mouse_entered"]
-[connection signal="mouse_exited" from="CanvasLayer/ColorRect/CenterContainer/menu" to="." method="_on_menu_mouse_exited"]
-[connection signal="button_down" from="CanvasLayer/CenterContainer/background/VBoxContainer/restart" to="." method="_on_restart_button_down"]
+[node name="ResultLayer" parent="." instance=ExtResource( 20 )]
+visible = false
+
+[node name="HelpWindow" parent="." instance=ExtResource( 21 )]
+visible = false
+
+[connection signal="gui_input" from="CanvasLayer/ColorRect/CenterContainer/HBoxContainer/menu" to="." method="_on_menu_gui_input"]
+[connection signal="mouse_entered" from="CanvasLayer/ColorRect/CenterContainer/HBoxContainer/menu" to="." method="_on_menu_mouse_entered"]
+[connection signal="mouse_exited" from="CanvasLayer/ColorRect/CenterContainer/HBoxContainer/menu" to="." method="_on_menu_mouse_exited"]
+[connection signal="gui_input" from="CanvasLayer/ColorRect/CenterContainer/HBoxContainer/help" to="." method="_on_help_gui_input"]
+[connection signal="mouse_entered" from="CanvasLayer/ColorRect/CenterContainer/HBoxContainer/help" to="." method="_on_help_mouse_entered"]
+[connection signal="mouse_exited" from="CanvasLayer/ColorRect/CenterContainer/HBoxContainer/help" to="." method="_on_help_mouse_exited"]
 [connection signal="on_hide" from="MenuPopupWindow" to="." method="_on_MenuPopupWindow_on_hide"]
 [connection signal="on_restart" from="MenuPopupWindow" to="." method="_on_MenuPopupWindow_on_restart"]
+[connection signal="on_restart" from="ResultLayer" to="." method="_on_ResultLayer_on_restart"]
+[connection signal="on_hide" from="HelpWindow" to="." method="_on_HelpWindow_on_hide"]
