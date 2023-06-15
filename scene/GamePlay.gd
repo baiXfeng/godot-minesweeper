@@ -27,6 +27,10 @@ var win_tips = "CONGRATULATIONS!\nYOU WIN!"
 var lose_tips = "GAME OVER!\nYOU SELECTED MINE!"
 var best_score = 60 * 59 + 59
 
+var is_vita_platform = false
+var vita_multifinger = []
+var vita_key_mapping = []
+
 const MINE_ID = 8
 
 const offsets_8 = [
@@ -48,6 +52,12 @@ const offsets_4 = [
 
 func _ready():
 	randomize()
+	
+	is_vita_platform = OS.get_name() == "Vita" or true
+	print("vita platform:", is_vita_platform)
+	
+	vita_multifinger.resize(2)	# 最多支持两个手指
+	
 	_Build()
 
 func _Build():
@@ -360,6 +370,85 @@ func _second_to_vector(second:float) -> Vector2:
 func _input(event):
 	if menu_dialog_window.visible:
 		return
+	if is_vita_platform:
+		_onVitaInput(event)
+		return
+	else:
+		_onMouseInput(event)
+		return
+
+func _is_multifinger():
+	return vita_multifinger[0] != Vector2.ZERO and vita_multifinger[1] != Vector2.ZERO
+
+func _onVitaInput(event):
+	var touch = event as InputEventScreenTouch
+	if touch:
+		#print("touch topdown:\t", touch.index, "\t", touch.pressed, "\t", touch.position)
+		#print("touch topdown to local:", camera2d.to_actual_position(touch.position))
+		
+		if touch.pressed:
+			if touch.index < vita_multifinger.size():
+				vita_multifinger[touch.index] = touch.position
+			if touch.index == 0:
+				_on_touch_down(touch.position)
+		else:
+			if touch.index < vita_multifinger.size():
+				vita_multifinger[touch.index] = Vector2.ZERO
+			if touch.index == 0:
+				_on_touch_up(touch.position)
+		
+		return
+	var touch_motion = event as InputEventScreenDrag
+	if touch_motion:
+		
+		#print("touch move:\t", touch_motion.index, "\t", touch_motion.position, "\t", touch_motion.relative, "\t", touch_motion.speed)
+		#print("touch move to local:\t", camera2d.to_actual_position(touch_motion.position))
+		
+		if _is_multifinger():
+			
+			#print("touch move:\t", touch_motion.index, "\t", touch_motion.position, "\t", touch_motion.relative)
+			
+			# 双指缩放地图
+			var length0 = vita_multifinger[0].distance_to(vita_multifinger[1])
+			
+			#print("before move:\t", vita_multifinger[0], vita_multifinger[1])
+			
+			if touch_motion.index < vita_multifinger.size():
+				vita_multifinger[touch_motion.index] = touch_motion.position
+			
+			#print("after move:\t", vita_multifinger[0], vita_multifinger[1])
+			
+			var length1 = vita_multifinger[0].distance_to(vita_multifinger[1])
+			var value = (length1 - length0) * 0.005
+			camera2d.zoom -= Vector2(value, value)
+			
+			var min_zoom = Vector2(0.25, 0.4)
+			var max_zoom =  Vector2(1.75, 1.75)
+			
+			if value > 0 and camera2d.zoom < min_zoom:
+				camera2d.zoom = min_zoom
+			elif value < 0 and camera2d.zoom > max_zoom:
+				camera2d.zoom = max_zoom
+			
+			mouse_pressed = false
+			
+			#print("zoom:\t", length0, "\t", length1, "\t", camera2d.zoom)
+		
+		else:
+			if touch_motion.index == 0 and mouse_pressed:
+				_on_touch_moved(touch_motion.position, touch_motion.relative)
+			
+		return
+	var joypad = event as InputEventJoypadButton
+	if joypad:
+		#print("joypad button:", joypad.button_index)
+		return
+	var joypad_motion = event as InputEventJoypadMotion
+	if joypad_motion and abs(joypad_motion.axis_value) > 0.25:
+		#print("joypad motion:", joypad_motion.axis, "\t", joypad_motion.axis_value)
+		return
+
+func _onMouseInput(event):
 	var mouse = event as InputEventMouseButton
 	if mouse:
 		var mouse_position = camera2d.to_actual_position(mouse.position)
@@ -400,22 +489,66 @@ func _input(event):
 					if _check_win():
 						_proc_win()
 			return
-		if mouse.button_index == BUTTON_MIDDLE and mouse.pressed:
+		"""
+			if mouse.button_index == BUTTON_MIDDLE and mouse.pressed:
 			var point = (mouse_position / 32).floor()
 			if map_border.has_point(point):
 				top_layer.set_cellv(point, 0)
+		"""
 
 		return
 	
 	var mouse_motion = event as InputEventMouseMotion
 	if mouse_motion and mouse_pressed:
 		if mouse_motion.relative.length() > 1 * camera2d.zoom.x:
-			camera2d.position -= mouse_motion.relative * camera2d.zoom
+			camera2d.position -= mouse_motion.relative * camera2d.zoom.x
 		if mouse_motion.relative.length() > 4 * camera2d.zoom.x:
 			var valid_select_point = map_border.has_point(select_point)
 			if valid_select_point and top_layer.get_cellv(select_point) == 1:
 				top_layer.set_cellv(select_point, 0)
 			select_point = Vector2(-1, -1)
+
+	pass
+
+func _on_touch_down(position:Vector2):
+	var mouse_position = camera2d.to_actual_position(position)
+	var point = (mouse_position / 32).floor()
+	select_point = Vector2(-1, -1)
+	if !map_border.has_point(point):
+		return
+	mouse_pressed = true
+	if _is_empty_tile(top_layer.get_cellv(point)):
+		if _is_number_tile(item_layer.get_cellv(point)):
+			_auto_open_tile(point)
+		return
+	if _is_flag_tile(flag_layer.get_cellv(point)):
+		return
+	top_layer.set_cellv(point, 1)
+	select_point = point
+
+func _on_touch_moved(position:Vector2, relative:Vector2):
+	if relative.length() > 1 * camera2d.zoom.x:
+		camera2d.position -= relative * camera2d.zoom.x
+	if relative.length() > 4 * camera2d.zoom.x:
+		var valid_select_point = map_border.has_point(select_point)
+		if valid_select_point and top_layer.get_cellv(select_point) == 1:
+			top_layer.set_cellv(select_point, 0)
+		select_point = Vector2(-1, -1)
+
+func _on_touch_up(position:Vector2):
+	var mouse_position = camera2d.to_actual_position(position)
+	var point = (mouse_position / 32).floor()
+	var new_point = (mouse_position / 32).floor()
+	var valid_select_point = map_border.has_point(select_point)
+	mouse_pressed = false
+	if new_point != select_point and valid_select_point:
+		top_layer.set_cellv(select_point, 0)
+		return
+	if valid_select_point:
+		top_layer.set_cellv(select_point, -1)
+		_open_tile(select_point)
+		if _check_win():
+			_proc_win()
 
 func _on_restart_button_down():
 	_Build()
